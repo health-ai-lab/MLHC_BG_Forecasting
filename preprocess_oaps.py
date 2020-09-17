@@ -70,9 +70,8 @@ elif sys.argv[-1] == '4':
     filter_data = True # default (main folder)
 
 #extracts gz files and saves them as json files in "extracted_files" folder
-def gz_to_json_files():
-    anomalies = list()
-    subjs.sort()
+#Also converts json files for each subject and saves them as csv files
+def gz_to_json_csv_files():
     for subj in subjs:
         subj_data_dir = '%s%s/direct-sharing-31/' %(data_directory,subj) #e.g. /data/PHI/PHI_OAPS/OpenAPS_data/n=88_OpenAPSDataAugust242018/15634563/direct-sharing-31/
         fn = '%s*.json.gz'%(subj_data_dir) 
@@ -83,44 +82,24 @@ def gz_to_json_files():
                 if os.path.isfile(fn):
                     filename = fn.split('/')[-1] #get filename
                     filename = filename.split('.')[0] #remove extension
+                    
                     try:
-                        with gzip.open(fn, "rb") as f:
-                            data = json.loads(f.read(), encoding="utf-8")
+                        with gzip.open(fn, "rt",  encoding="utf-8") as f:
+                            data = json.load(f)
                         extracted_folder_dir = '%s%s/direct-sharing-31/extracted_files/' %(data_directory,subj)
                         if not path.exists(extracted_folder_dir):
                             os.mkdir(extracted_folder_dir)
-                        
-                        extracted_folder_dir = extracted_folder_dir+filename+'.json'
-                        with open(extracted_folder_dir, 'w') as fp:
+                        filename = extracted_folder_dir+filename
+                        #saving json file
+                        with open(filename+'.json', 'w') as fp: 
                             json.dump(data, fp)
-                        print('File '+filename+' saved to '+subj_data_dir+'extracted_files/')
-                    except:
-                        anomalies.append(subj) #corrupt files
-
-
-#converts json files for each subject and saves them as csv files
-def json_to_csv_files():
-    subjs.sort()
-    for subj in subjs:
-        print(subj)
-        subj_data_file = '%s%s/direct-sharing-31/extracted_files/' %(data_directory,subj) #e.g. /data/PHI/PHI_OAPS/OpenAPS_data/n=88_OpenAPSDataAugust242018/15634563/direct-sharing-31/extracted_files/
-        if path.exists(subj_data_file) == True:
-            files = glob.glob(subj_data_file+feature+"*.json") #all the json files with <feature> in the filename
-        
-            if len(files) > 0:
-                try:
-                    for data_file in files:
-                        with open(data_file) as json_data:
-                            data = json.load(json_data, strict=False)
+                        print('Json data for subject '+ subj + ' saved to '+filename+'\n')
+                        #saving csv file
                         df = pd.DataFrame(data)
-                        filename = data_file.split('/')[-1] #entries.json
-                        filename = filename.split('.')[0] #entries
-                        filename = subj_data_file+filename+'.csv' ##e.g. /data/PHI/PHI_OAPS/OpenAPS_data/n=88_OpenAPSDataAugust242018/15634563/direct-sharing-31/extracted_files/entires.json
-                        #uncomment to replace files
-                        df.to_csv(filename, encoding='utf-8')
-                    print("Saving csv files for subject: " + subj + "\n")
-                except Exception as e:
-                    print(e)
+                        df.to_csv(filename+'.csv', encoding='utf-8')
+                        print("Saving csv files for subject: " + subj + "\n")
+                    except Exception as e:
+                        print("error: {0}".format(e))
 
 #returns data values from different files as a dataframe for a given subject "subj" and "feature" 
 #i.e. feature = ['entries','treatments','devicestatus']
@@ -525,11 +504,18 @@ if __name__ == "__main__":
     threshold = sys.argv[4] #remove CGM readings below 15 mg/dL
     history_window = sys.argv[5] #no. of past values to use to make estimations of future values
     prediction_window = sys.argv[6] #6 or 12; no. of future values to predict (6 denotes a prediction horizon of 5 * 6 = 30 min)
-    normalize_data = sys.argv[5]
     
-    threshold = int(sys.argv[4]) #remove CGM readings below 15 mg/dL
-    history_window = int(sys.argv[7]) #no. of past values to use to make estimations of future values
-    prediction_window = int(sys.argv[8]) #no. of future values to predict (6 denotes a prediction horizon of 5 * 6 = 30 min)
-    PH = str(prediction_window) #prediction horizon
+    threshold = int(threshold) #remove CGM readings below 15 mg/dL
+    history_window = int(history_window) #no. of past values to use to make estimations of future values
+    PH = prediction_window #prediction horizon
+    prediction_window = int(prediction_window) #no. of future values to predict (6 denotes a prediction horizon of 5 * 6 = 30 min)
+    
     if prediction_window == 30 or prediction_window == 60:
         prediction_window = prediction_window//5
+
+    subjs = [subject for subject in os.listdir(data_directory) if "." not in subject]
+    subjs.sort()
+    gz_to_json_csv_files()
+    combine_data()
+    create_time_series()
+    get_windowed_data()
