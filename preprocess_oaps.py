@@ -496,10 +496,10 @@ def get_windowed_data():
 if __name__ == "__main__":
     root_directory = sys.argv[1]
     data_directory = sys.argv[2]
-    normalize_data = sys.argv[3] # scale up all features except glucose
-    threshold = sys.argv[4] #remove CGM readings below 15 mg/dL
-    history_window = sys.argv[5] #no. of past values to use to make estimations of future values
-    prediction_window = sys.argv[6] #6 or 12; no. of future values to predict (6 denotes a prediction horizon of 5 * 6 = 30 min)
+    normalize_data = sys.argv[4] # scale up all features except glucose
+    threshold = sys.argv[5] #remove CGM readings below 15 mg/dL
+    history_window = sys.argv[6] #no. of past values to use to make estimations of future values
+    prediction_window = sys.argv[7] #6 or 12; no. of future values to predict (6 denotes a prediction horizon of 5 * 6 = 30 min)
     
     threshold = int(threshold) #remove CGM readings below 15 mg/dL
     history_window = int(history_window) #no. of past values to use to make estimations of future values
