@@ -43,10 +43,6 @@ from scipy import signal
 import pickle 
 from sklearn.preprocessing import MinMaxScaler
 
-
-subjs = [subject for subject in os.listdir(data_directory) if "." not in subject]
-subjs.sort()
-
 feature = 'entries' #[entries,devicestatus,profile,treatments]
 
 if sys.argv[-1] == '0':
